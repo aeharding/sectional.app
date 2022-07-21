@@ -2,6 +2,8 @@ import L, { Coords, DoneCallback, LatLngBoundsExpression } from "leaflet";
 import { useEffect, useRef } from "react";
 import tiler from "./tiler";
 
+export const MIN_ZOOM = 10;
+
 let tileCallbacks: any = {};
 
 // Calculated min/max/nodata for the file, used for each tile request
@@ -22,6 +24,11 @@ const WorkerTiles = L.GridLayer.extend({
     var uLGeo = map.unproject(uLPix, coords.z);
     var lRGeo = map.unproject(lRPix, coords.z);
 
+    if (coords.z < MIN_ZOOM) {
+      done();
+      return;
+    }
+
     var tile = document.createElement("img");
     tiler.postMessage({
       tile: {
@@ -35,7 +42,7 @@ const WorkerTiles = L.GridLayer.extend({
       // This doesn't really seem to make a difference, but it's quicker.
       // TODO: Make empty tiles not show up as broken images
       if (bytes.length === 0) {
-        done(undefined, undefined);
+        done();
       } else {
         var outputBlob = new Blob([bytes], { type: "image/png" });
         var imageURL = window.URL.createObjectURL(outputBlob);
@@ -66,7 +73,7 @@ export default function Map() {
 
     var map = L.map(mapElRef.current).setView([0, 0], 3);
     mapRef.current = map;
-    map.options.minZoom = 10;
+    map.options.minZoom = MIN_ZOOM;
 
     L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {
       attribution:
