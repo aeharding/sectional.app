@@ -2,14 +2,15 @@ import React, { useState } from "react";
 import "./App.css";
 // @ts-ignore
 import { Reader } from "@transcend-io/conflux";
-import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Map from "./Map";
 import tiler from "./tiler";
 
 function App() {
   async function extract() {
-    const zip = await fetch("/downloads/Chicago.zip").then((res) => res.blob());
+    const zip = await fetch(
+      "/api/aeronav/visual/07-14-2022/sectional-files/Chicago.zip"
+    ).then((res) => res.blob());
 
     console.log(zip);
 
