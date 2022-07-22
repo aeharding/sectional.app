@@ -5,64 +5,7 @@ import { XMLParser } from "fast-xml-parser";
 // @ts-ignore
 import { Reader } from "@transcend-io/conflux";
 import localforage from "localforage";
-
-// unfortunately there's no api for this
-export enum ChartList {
-  SALB = "Albuquerque",
-  SANC = "Anchorage",
-  SATL = "Atlanta",
-  SBET = "Bethel",
-  SBIL = "Billings",
-  SBRO = "Brownsville",
-  SCAP = "Cape Lisburne",
-  SCHA = "Charlotte",
-  SCHE = "Cheyenne",
-  SCHI = "Chicago",
-  SCIN = "Cincinnati",
-  SCB = "Cold Bay",
-  SDAL = "Dallas",
-  SDAW = "Dawson",
-  SDEN = "Denver",
-  SDET = "Detroit",
-  SDUT = "Dutch Harbor",
-  SELP = "El Paso",
-  SFAI = "Fairbanks",
-  SGF = "Great Falls",
-  SGB = "Green Bay",
-  SHAL = "Halifax",
-  SHI = "Hawaiian IS.",
-  SHOU = "Houston",
-  SJAC = "Jacksonville",
-  SJUN = "Juneau",
-  SKC = "Kansas City",
-  SKET = "Ketchikan",
-  SKOD = "Kodiak",
-  SKF = "Klamath Falls",
-  SLH = "Lake Huron",
-  SLV = "Las Vegas",
-  SLA = "Los Angeles",
-  SMCG = "McGrath",
-  SMEM = "Memphis",
-  SMIA = "Miami",
-  SMON = "Montreal",
-  SNO = "New Orleans",
-  SNY = "New York",
-  SNOM = "Nome",
-  SOMA = "Omaha",
-  SPHX = "Phoenix",
-  SPB = "Point Barrow",
-  SSLC = "Salt Lake City",
-  SSA = "San Antonio",
-  SSF = "San Francisco",
-  SSEA = "Seattle",
-  SSEW = "Seward",
-  SSTL = "St. Louis",
-  STC = "Twin Cities",
-  SWAS = "Washington",
-  SWAL = "West Aleutian Isl",
-  SWHI = "Whitehorse",
-  SWIC = "Wichita",
-}
+import { Sectionals } from "./Sectionals";
 
 interface SectionalInfo {
   url: string;
@@ -72,7 +15,7 @@ interface SectionalInfo {
 }
 
 export async function getSectionalInfo(
-  geoname: ChartList
+  geoname: Sectionals
 ): Promise<SectionalInfo> {
   const data = await fetch(
     `/api/apra/vfr/sectional/chart?${new URLSearchParams({
@@ -116,11 +59,11 @@ export async function getTiffFromSectionalZip(zip: Blob): Promise<Blob> {
   return new Blob([arrayBuffer]);
 }
 
-export async function getSectionalAsTiff(geoname: ChartList): Promise<Blob> {
+export async function getSectionalAsTiff(geoname: Sectionals): Promise<Blob> {
   const cachedTiffBlob = await localforage.getItem<Blob>(`tiff-${geoname}`);
   if (cachedTiffBlob) return cachedTiffBlob;
 
-  const sectionalInfo = await getSectionalInfo(ChartList.SCHI);
+  const sectionalInfo = await getSectionalInfo(geoname);
 
   const zip = await downloadSectionalZip(sectionalInfo.url);
 

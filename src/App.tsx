@@ -1,28 +1,19 @@
-import React, { useEffect } from "react";
+import React from "react";
 import "./App.css";
 import "leaflet/dist/leaflet.css";
-import Map from "./Map";
-import tiler from "./tiler";
-import * as FaaService from "./services/FaaService";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import SectionalPage from "./SectionalPage";
+import HomePage from "./HomePage";
 
 function App() {
-  async function extract() {
-    const tiffBlob = await FaaService.getSectionalAsTiff(
-      FaaService.ChartList.SCHI
-    );
-
-    tiler.postMessage({ file: tiffBlob });
-  }
-
-  useEffect(() => {
-    extract();
-  }, []);
-
   return (
     <div className="App">
-      <header className="App-header">
-        <Map />
-      </header>
+      <BrowserRouter>
+        <Routes>
+          <Route index element={<HomePage />} />
+          <Route path=":sectionalId" element={<SectionalPage />} />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
 }

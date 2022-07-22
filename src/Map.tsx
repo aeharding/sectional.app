@@ -1,6 +1,7 @@
 import L, { Coords, DoneCallback, LatLngBoundsExpression } from "leaflet";
 import localforage from "localforage";
 import { useEffect, useRef } from "react";
+import { getCoordinatesForSectional, Sectionals } from "./services/Sectionals";
 import tiler from "./tiler";
 
 export const MIN_ZOOM = 10;
@@ -73,7 +74,11 @@ const WorkerTiles = L.GridLayer.extend({
 
 let tiffTiles: any;
 
-export default function Map() {
+interface MapProps {
+  sectional: Sectionals;
+}
+
+export default function Map({ sectional }: MapProps) {
   const mapElRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map>();
   const marker = useRef<L.Marker>();
@@ -82,12 +87,17 @@ export default function Map() {
   useEffect(() => {
     if (!mapElRef.current || mapRef.current) return;
 
+    const coords = getCoordinatesForSectional(sectional);
+
     var map = L.map(mapElRef.current, {
       minZoom: MIN_ZOOM,
       maxZoom: 13,
       attributionControl: false,
       zoomSnap: window.matchMedia("(hover:none)").matches ? 0 : 1,
-    }).locate({ setView: true, maxZoom: 11 });
+      zoomControl: !window.matchMedia("(hover:none)").matches,
+    })
+      .setView([+coords.lat, +coords.lon], 3)
+      .locate({ setView: true, maxZoom: 11 });
 
     mapRef.current = map;
 
@@ -129,12 +139,13 @@ export default function Map() {
           return [lat, lngs[i]];
         }) as LatLngBoundsExpression;
         // map.fitBounds(latLngs);
+        map.setMaxBounds(latLngs);
         tiffTiles.addTo(map);
       } else {
         console.log(evt);
       }
     };
-  }, [mapElRef]);
+  }, [mapElRef, sectional]);
 
   useEffect(() => {
     if (!marker.current && mapRef.current)
