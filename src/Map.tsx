@@ -1,4 +1,5 @@
 import L, { Coords, DoneCallback, LatLngBoundsExpression } from "leaflet";
+import localforage from "localforage";
 import { useEffect, useRef } from "react";
 import tiler from "./tiler";
 
@@ -85,6 +86,7 @@ export default function Map() {
       minZoom: MIN_ZOOM,
       maxZoom: 13,
       attributionControl: false,
+      zoomSnap: window.matchMedia("(hover:none)").matches ? 0 : 1,
     }).locate({ setView: true, maxZoom: 11 });
 
     mapRef.current = map;
@@ -95,6 +97,13 @@ export default function Map() {
     }).addTo(map);
 
     tiler.onmessage = function (evt) {
+      if (evt.data === "failed") {
+        // There was a problem with the cached data. Need to clear and retry
+        // TODO just clear bad data
+        localforage.clear();
+
+        // TODO show error to the user, ask to restart
+      }
       if (evt.data.tile) {
         var tileReq = evt.data.tile.request;
         var callbackKey =
