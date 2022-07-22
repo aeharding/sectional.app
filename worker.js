@@ -54,6 +54,7 @@ var Module = {
   },
   printErr: function (text) {
     console.log("stderr: " + text);
+    postMessage("failed");
   },
   // Optimized builds contain a .js.mem file which is loaded asynchronously;
   // this waits until that has finished before performing further setup.
