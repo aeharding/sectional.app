@@ -250,6 +250,7 @@ var Module = {
     }, "idii"); // The actual signature is int GDALDummyProgress(double, const char *, void *)
 
     initialized = true;
+    processFileIfReady();
   },
 };
 
@@ -559,40 +560,47 @@ function generateTile(tileObj, dataset) {
 }
 
 var activeDataset;
+var file;
 
 onmessage = function (msg) {
-  if (!initialized) {
-    console.log("Runtime not initialized yet, try again");
-    return;
-  }
   var data = msg.data;
   if (data.file) {
-    if (activeDataset) {
-      GDALClose(activeDataset);
-      FS.unmount(TIFFPATH);
-    }
-    // Make GeoTiffs available to GDAL in the virtual filesystem that it lives inside
-    // FS.mount(
-    //   WORKERFS,
-    //   {
-    //     files: data.files,
-    //   },
-    //   TIFFPATH
-    // );
-
-    const filename = "geotiff.tif";
-    FS.mount(
-      WORKERFS,
-      { blobs: [{ name: filename, data: data.file }] },
-      TIFFPATH
-    );
-
-    activeDataset = GDALOpen(TIFFPATH + "/" + filename);
-    var bounds = getProjectedBounds(activeDataset);
-    var stats = getStats(activeDataset);
-    postMessage({ success: true, bounds: bounds, stats: stats });
+    file = data.file;
+    processFileIfReady();
   } else if (data.tile) {
+    if (!initialized) {
+      console.log("Runtime not initialized yet, try again");
+      return;
+    }
+
     // TODO: PostMesage from here not generateTile.
     generateTile(data.tile, activeDataset);
   }
 };
+
+function processFileIfReady() {
+  if (!initialized || !file) return;
+
+  if (activeDataset) {
+    GDALClose(activeDataset);
+    FS.unmount(TIFFPATH);
+  }
+  // Make GeoTiffs available to GDAL in the virtual filesystem that it lives inside
+  // FS.mount(
+  //   WORKERFS,
+  //   {
+  //     files: data.files,
+  //   },
+  //   TIFFPATH
+  // );
+
+  const filename = "geotiff.tif";
+  FS.mount(WORKERFS, { blobs: [{ name: filename, data: file }] }, TIFFPATH);
+
+  activeDataset = GDALOpen(TIFFPATH + "/" + filename);
+  var bounds = getProjectedBounds(activeDataset);
+  var stats = getStats(activeDataset);
+  postMessage({ success: true, bounds: bounds, stats: stats });
+
+  file = undefined;
+}

@@ -9,6 +9,12 @@ let tileCallbacks: any = {};
 // Calculated min/max/nodata for the file, used for each tile request
 let fileStats: any;
 
+var myLocationIcon = L.icon({
+  iconUrl: "location.svg",
+
+  iconSize: [65, 65], // size of the icon
+});
+
 const WorkerTiles = L.GridLayer.extend({
   createTile: function (coords: Coords, done: DoneCallback) {
     var uLPix = {
@@ -24,6 +30,8 @@ const WorkerTiles = L.GridLayer.extend({
     var uLGeo = map.unproject(uLPix, coords.z);
     var lRGeo = map.unproject(lRPix, coords.z);
 
+    // If you hold a pinch on a touch device it will
+    // trigger the worker which slows stuff down, so bail
     if (coords.z < MIN_ZOOM) {
       done();
       return;
@@ -67,18 +75,23 @@ let tiffTiles: any;
 export default function Map() {
   const mapElRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map>();
+  const marker = useRef<L.Marker>();
+  const geolocationWatcher = useRef<number>();
 
   useEffect(() => {
     if (!mapElRef.current || mapRef.current) return;
 
-    var map = L.map(mapElRef.current).setView([0, 0], 3);
+    var map = L.map(mapElRef.current, {
+      minZoom: MIN_ZOOM,
+      maxZoom: 13,
+      attributionControl: false,
+    }).locate({ setView: true, maxZoom: 11 });
+
     mapRef.current = map;
-    map.options.minZoom = MIN_ZOOM;
 
     L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {
       attribution:
         '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 18,
     }).addTo(map);
 
     tiler.onmessage = function (evt) {
@@ -106,13 +119,35 @@ export default function Map() {
         let latLngs = lats.map(function (lat, i, arr) {
           return [lat, lngs[i]];
         }) as LatLngBoundsExpression;
-        map.fitBounds(latLngs);
+        // map.fitBounds(latLngs);
         tiffTiles.addTo(map);
       } else {
         console.log(evt);
       }
     };
   }, [mapElRef]);
+
+  useEffect(() => {
+    if (!marker.current && mapRef.current)
+      marker.current = L.marker([0, 0], {
+        icon: myLocationIcon,
+      })
+        .bindPopup("Current position")
+        .addTo(mapRef.current);
+
+    geolocationWatcher.current = navigator.geolocation.watchPosition(
+      ({ coords }) =>
+        marker.current?.setLatLng({
+          lat: coords.latitude,
+          lng: coords.longitude,
+        })
+    );
+
+    return () => {
+      typeof geolocationWatcher.current === "number" &&
+        navigator.geolocation.clearWatch(geolocationWatcher.current);
+    };
+  });
 
   return (
     <>
