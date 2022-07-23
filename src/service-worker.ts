@@ -13,6 +13,7 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { StaleWhileRevalidate } from "workbox-strategies";
+import { PrecacheEntry } from "workbox-precaching";
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -22,7 +23,23 @@ clientsClaim();
 // Their URLs are injected into the manifest variable below.
 // This variable must be present somewhere in your service worker file,
 // even if you decide not to use precaching. See https://cra.link/PWA
-precacheAndRoute(self.__WB_MANIFEST);
+// precacheAndRoute(self.__WB_MANIFEST);
+
+// Replaced above with:
+
+// default static file URLs generated during the build process
+const staticBuildFiles = self.__WB_MANIFEST as PrecacheEntry[];
+
+// extra file URLs you want to be precached
+const extraPrecachedFiles: PrecacheEntry[] = [
+  "/worker.js",
+  "/gdal.js",
+  "/gdal.wasm",
+  "/gdal.data",
+].map((url) => ({ url, revision: null }));
+
+// register all assets to be precached by the service worker
+precacheAndRoute([...staticBuildFiles, ...extraPrecachedFiles]);
 
 // Set up App Shell-style routing, so that all navigation requests
 // are fulfilled with your index.html shell. Learn more at
