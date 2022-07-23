@@ -24,6 +24,24 @@ const globalStyles = css`
     width: 100vw;
     height: 100vh;
   }
+
+  .leaflet-control-locate-location circle + circle {
+    animation: leaflet-control-locate-throb 4s ease infinite;
+  }
+
+  @keyframes leaflet-control-locate-throb {
+    0% {
+      transform: scale(0.75, 0.75);
+    }
+
+    50% {
+      transform: scale(0.6, 0.6);
+    }
+
+    100% {
+      transform: scale(0.75, 0.75);
+    }
+  }
 `;
 
 const root = ReactDOM.createRoot(

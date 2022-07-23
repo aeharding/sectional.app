@@ -1,6 +1,7 @@
 import L, { Coords, DoneCallback, LatLngBoundsExpression } from "leaflet";
 import localforage from "localforage";
 import { useEffect, useRef } from "react";
+import Controls from "./Controls";
 import { getCoordinatesForSectional, Sectionals } from "./services/Sectionals";
 import tiler from "./tiler";
 
@@ -11,10 +12,10 @@ let tileCallbacks: any = {};
 // Calculated min/max/nodata for the file, used for each tile request
 let fileStats: any;
 
-var myLocationIcon = L.icon({
-  iconUrl: "location.svg",
-
-  iconSize: [65, 65], // size of the icon
+var myLocationIcon = L.divIcon({
+  html: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" version="1.1" viewBox="-16 -16 32 32"><circle r="16" style="fill:#fff;fill-opacity:1;opacity:1;"></circle><circle r="16" style="fill:#2A93EE;fill-opacity:1;opacity:1;"></circle></svg>',
+  className: "leaflet-control-locate-location",
+  iconSize: [20, 20],
 });
 
 const WorkerTiles = L.GridLayer.extend({
@@ -97,7 +98,7 @@ export default function Map({ sectional }: MapProps) {
       zoomControl: !window.matchMedia("(hover:none)").matches,
     })
       .setView([+coords.lat, +coords.lon], 3)
-      .locate({ setView: true, maxZoom: 11 });
+      .locate({ setView: true, maxZoom: 10 });
 
     mapRef.current = map;
 
@@ -174,6 +175,8 @@ export default function Map({ sectional }: MapProps) {
   return (
     <>
       <div ref={mapElRef} />
+
+      <Controls map={mapRef} />
     </>
   );
 }
