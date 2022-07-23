@@ -1,5 +1,4 @@
 import React from "react";
-import "./App.css";
 import "leaflet/dist/leaflet.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import SectionalPage from "./SectionalPage";

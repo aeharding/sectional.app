@@ -160,7 +160,9 @@ export default function Map({ sectional }: MapProps) {
         marker.current?.setLatLng({
           lat: coords.latitude,
           lng: coords.longitude,
-        })
+        }),
+      undefined,
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
     );
 
     return () => {

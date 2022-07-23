@@ -218,8 +218,8 @@ const sectionalCoordinates: Record<Sectionals, { lat: string; lon: string }> = {
     lon: "-118.242766",
   },
   McGrath: {
-    lat: "46.2400439",
-    lon: "-93.2729051",
+    lat: "62.953204",
+    lon: "-155.595992",
   },
   Memphis: {
     lat: "35.1335022",
