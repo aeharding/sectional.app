@@ -1,7 +1,7 @@
 import { getDistance } from "geolib";
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
 import useGeolocation from "./hooks/useGeolocation";
+import Sectional from "./Sectional";
 import { getCoordinatesForSectional, Sectionals } from "./services/Sectionals";
 
 export default function HomePage() {
@@ -34,9 +34,7 @@ export default function HomePage() {
           <ol>
             {nearest.map(({ key, value, distance }) => (
               <li key={key}>
-                <Link to={`/${key}`}>
-                  {value} ({key})
-                </Link>
+                <Sectional sectional={key} />
               </li>
             ))}
           </ol>
@@ -49,9 +47,7 @@ export default function HomePage() {
       <ol>
         {Object.entries(Sectionals).map(([key, value]) => (
           <li key={key}>
-            <Link to={`/${key}`}>
-              {value} ({key})
-            </Link>
+            <Sectional sectional={key} />
           </li>
         ))}
       </ol>

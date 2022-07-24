@@ -111,8 +111,7 @@ export default function Map({ sectional }: MapProps) {
       if (evt.data === "failed") {
         // There was a problem with the cached data. Need to clear and retry
         // TODO just clear bad data
-        localforage.clear();
-
+        // localforage.clear();
         // TODO show error to the user, ask to restart
       }
       if (evt.data.tile) {

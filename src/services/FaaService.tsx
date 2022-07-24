@@ -1,9 +1,8 @@
 // from https://www.faa.gov/air_traffic/flight_info/aeronav/productcatalog/VFRCharts/Sectional/
 
+import { BlobReader, BlobWriter, ZipReader } from "@zip.js/zip.js";
 import { XMLParser } from "fast-xml-parser";
 
-// @ts-ignore
-import { Reader } from "@transcend-io/conflux";
 import localforage from "localforage";
 import { Sectionals } from "./Sectionals";
 
@@ -45,29 +44,38 @@ export async function downloadSectionalZip(faaUrl: string): Promise<Blob> {
 }
 
 export async function getTiffFromSectionalZip(zip: Blob): Promise<Blob> {
-  let entry = undefined;
+  // create a BlobReader to read with a ZipReader the zip from a Blob object
+  const reader = new ZipReader(new BlobReader(zip));
 
-  for await (const _entry of Reader(zip)) {
-    if (_entry.name.endsWith(".tif")) {
-      entry = _entry;
-      break;
-    }
-  }
+  // get all entries from the zip
+  const entries = await reader.getEntries();
+  const tif = await entries
+    .find(({ filename }) => filename.endsWith(".tif"))
+    ?.getData?.(new BlobWriter());
 
-  const arrayBuffer = await entry.arrayBuffer();
+  if (!tif) throw new Error("TIF file not found in zip");
 
-  return new Blob([arrayBuffer]);
+  // close the ZipReader
+  await reader.close();
+
+  return tif;
 }
 
 export async function getSectionalAsTiff(geoname: Sectionals): Promise<Blob> {
   const cachedTiffBlob = await localforage.getItem<Blob>(`tiff-${geoname}`);
-  if (cachedTiffBlob) return cachedTiffBlob;
+  if (cachedTiffBlob && cachedTiffBlob.size) {
+    return cachedTiffBlob;
+  }
 
   const sectionalInfo = await getSectionalInfo(geoname);
 
   const zip = await downloadSectionalZip(sectionalInfo.url);
 
+  console.log("zip size:", zip.size);
+
   const tiffBlob = await getTiffFromSectionalZip(zip);
+
+  if (!tiffBlob.size) throw new Error("TIF size was 0!");
 
   await localforage.setItem(`tiff-${geoname}`, tiffBlob);
   await localforage.setItem(`info-${geoname}`, sectionalInfo);
