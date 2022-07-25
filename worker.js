@@ -504,11 +504,6 @@ function generateTile(tileObj, dataset) {
     "Byte",
     "-of",
     "PNG",
-    // "-outsize",
-    // "50%",
-    // "50%",
-    // "-r",
-    // "average",
     //'-scale', '4000', '15176', '0', '255',  // Good defaults for Landsat
     "-scale",
     tileObj.stats.min.toString(),
