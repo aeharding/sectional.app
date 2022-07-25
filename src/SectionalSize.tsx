@@ -1,9 +1,9 @@
 import prettyBytes from "pretty-bytes";
 
 interface SectionalSizeProps {
-  blob: Blob;
+  blobs: Blob[];
 }
 
-export default function SectionalSize({ blob }: SectionalSizeProps) {
-  return <>{prettyBytes(blob.size)}</>;
+export default function SectionalSize({ blobs }: SectionalSizeProps) {
+  return <>{prettyBytes(blobs.reduce((prev, curr) => prev + curr.size, 0))}</>;
 }

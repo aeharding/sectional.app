@@ -5,6 +5,8 @@ import { XMLParser } from "fast-xml-parser";
 
 import localforage from "localforage";
 import { Sectionals } from "./Sectionals";
+// @ts-ignore
+import loam from "loam";
 
 interface SectionalInfo {
   url: string;
@@ -61,10 +63,15 @@ export async function getTiffFromSectionalZip(zip: Blob): Promise<Blob> {
   return tif;
 }
 
-export async function getSectionalAsTiff(geoname: Sectionals): Promise<Blob> {
-  const cachedTiffBlob = await localforage.getItem<Blob>(`tiff-${geoname}`);
-  if (cachedTiffBlob && cachedTiffBlob.size) {
-    return cachedTiffBlob;
+loam.initialize("/");
+
+export async function getSectionalAsTiff(
+  geoname: Sectionals
+): Promise<{ s: Blob; m: Blob }> {
+  const cachedSTiffBlob = await localforage.getItem<Blob>(`tiff-${geoname}-s`);
+  const cachedMTiffBlob = await localforage.getItem<Blob>(`tiff-${geoname}-m`);
+  if (cachedSTiffBlob && cachedMTiffBlob) {
+    return { s: cachedSTiffBlob, m: cachedMTiffBlob };
   }
 
   const sectionalInfo = await getSectionalInfo(geoname);
@@ -75,10 +82,46 @@ export async function getSectionalAsTiff(geoname: Sectionals): Promise<Blob> {
 
   const tiffBlob = await getTiffFromSectionalZip(zip);
 
-  if (!tiffBlob.size) throw new Error("TIF size was 0!");
+  let dataset = await loam.open(tiffBlob);
 
-  await localforage.setItem(`tiff-${geoname}`, tiffBlob);
+  const wkt = await dataset.wkt();
+  console.log(wkt);
+
+  dataset = await dataset.warp([
+    "-s_srs",
+    wkt,
+    "-t_srs",
+    "EPSG:3857",
+    "-te_srs",
+    "EPSG:4326",
+    "-of",
+    "GTiff",
+  ]);
+
+  const smallDataset = await dataset.convert([
+    "-outsize",
+    "30%",
+    "30%",
+    "-r",
+    "average",
+  ]);
+  const mediumDataset = await dataset.convert([
+    "-outsize",
+    "55%",
+    "55%",
+    "-r",
+    "average",
+  ]);
+
+  const reprojectedSTiffBlob = new Blob([await smallDataset.bytes()]);
+  const reprojectedMTiffBlob = new Blob([await mediumDataset.bytes()]);
+  console.log("got reprojection!", reprojectedSTiffBlob);
+
+  if (!reprojectedSTiffBlob.size) throw new Error("TIF size was 0!");
+
+  await localforage.setItem(`tiff-${geoname}-s`, reprojectedSTiffBlob);
+  await localforage.setItem(`tiff-${geoname}-m`, reprojectedMTiffBlob);
   await localforage.setItem(`info-${geoname}`, sectionalInfo);
 
-  return tiffBlob;
+  return { s: reprojectedSTiffBlob, m: reprojectedMTiffBlob };
 }

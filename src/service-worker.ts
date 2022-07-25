@@ -33,6 +33,7 @@ const staticBuildFiles = self.__WB_MANIFEST as PrecacheEntry[];
 // extra file URLs you want to be precached
 const extraPrecachedFiles: PrecacheEntry[] = [
   "/worker.js",
+  "/loam-worker.js",
   "/gdal.js",
   "/gdal.wasm",
   "/gdal.data",

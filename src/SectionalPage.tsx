@@ -17,7 +17,8 @@ export default function SectionalPage() {
 
     const tiffBlob = await FaaService.getSectionalAsTiff(selectedSectional);
 
-    tiler.postMessage({ file: tiffBlob });
+    tiler.s.postMessage({ file: tiffBlob.s });
+    tiler.m.postMessage({ file: tiffBlob.m });
   }
 
   useEffect(() => {

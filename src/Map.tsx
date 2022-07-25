@@ -1,11 +1,10 @@
 import L, { Coords, DoneCallback, LatLngBoundsExpression } from "leaflet";
-import localforage from "localforage";
 import { useEffect, useRef } from "react";
 import Controls from "./Controls";
 import { getCoordinatesForSectional, Sectionals } from "./services/Sectionals";
 import tiler from "./tiler";
 
-export const MIN_ZOOM = 10;
+export const MIN_ZOOM = 7;
 
 let tileCallbacks: any = {};
 
@@ -41,7 +40,7 @@ const WorkerTiles = L.GridLayer.extend({
     }
 
     var tile = document.createElement("img");
-    tiler.postMessage({
+    (coords.z < 10 ? tiler.s : tiler.m).postMessage({
       tile: {
         upperLeft: uLGeo,
         lowerRight: lRGeo,
@@ -58,6 +57,9 @@ const WorkerTiles = L.GridLayer.extend({
         var outputBlob = new Blob([bytes], { type: "image/png" });
         var imageURL = window.URL.createObjectURL(outputBlob);
         tile.src = imageURL;
+        tile.onload = () => {
+          URL.revokeObjectURL(imageURL);
+        };
         done(undefined, tile); // done(error, tile);
       }
     };
@@ -107,44 +109,47 @@ export default function Map({ sectional }: MapProps) {
         '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    tiler.onmessage = function (evt) {
-      if (evt.data === "failed") {
-        // There was a problem with the cached data. Need to clear and retry
-        // TODO just clear bad data
-        // localforage.clear();
-        // TODO show error to the user, ask to restart
-      }
-      if (evt.data.tile) {
-        var tileReq = evt.data.tile.request;
-        var callbackKey =
-          tileReq.coords.x.toString() +
-          "," +
-          tileReq.coords.y.toString() +
-          "," +
-          tileReq.coords.z.toString();
-        tileCallbacks[callbackKey](evt.data.tile.bytes);
-        delete tileCallbacks[callbackKey];
-      } else if (evt.data.success) {
-        if (tiffTiles) {
-          tiffTiles.remove();
-        }
-        tiffTiles = new WorkerTiles();
-        var lats: number[] = Array.from(evt.data.bounds[1]);
-        var lngs: number[] = Array.from(evt.data.bounds[0]);
+    [tiler.s, tiler.m].forEach(
+      (tilerSize) =>
+        (tilerSize.onmessage = function (evt) {
+          if (evt.data === "failed") {
+            // There was a problem with the cached data. Need to clear and retry
+            // TODO just clear bad data
+            // localforage.clear();
+            // TODO show error to the user, ask to restart
+          }
+          if (evt.data.tile) {
+            var tileReq = evt.data.tile.request;
+            var callbackKey =
+              tileReq.coords.x.toString() +
+              "," +
+              tileReq.coords.y.toString() +
+              "," +
+              tileReq.coords.z.toString();
+            tileCallbacks[callbackKey](evt.data.tile.bytes);
+            delete tileCallbacks[callbackKey];
+          } else if (evt.data.success) {
+            if (tiffTiles) {
+              tiffTiles.remove();
+            }
+            tiffTiles = new WorkerTiles();
+            var lats: number[] = Array.from(evt.data.bounds[1]);
+            var lngs: number[] = Array.from(evt.data.bounds[0]);
 
-        // TODO: Remove globals
-        fileStats = evt.data.stats;
-        // Zip
-        let latLngs = lats.map(function (lat, i, arr) {
-          return [lat, lngs[i]];
-        }) as LatLngBoundsExpression;
-        // map.fitBounds(latLngs);
-        map.setMaxBounds(latLngs);
-        tiffTiles.addTo(map);
-      } else {
-        console.log(evt);
-      }
-    };
+            // TODO: Remove globals
+            fileStats = evt.data.stats;
+            // Zip
+            let latLngs = lats.map(function (lat, i, arr) {
+              return [lat, lngs[i]];
+            }) as LatLngBoundsExpression;
+            // map.fitBounds(latLngs);
+            map.setMaxBounds(latLngs);
+            tiffTiles.addTo(map);
+          } else {
+            console.log(evt);
+          }
+        })
+    );
   }, [mapElRef, sectional]);
 
   useEffect(() => {

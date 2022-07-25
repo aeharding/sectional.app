@@ -27,6 +27,7 @@
     "georaster-layer-for-leaflet": "^3.8.0",
     "geotiff": "^2.0.5",
     "leaflet": "^1.8.0",
+    "loam": "^1.1.0",
     "localforage": "^1.10.0",
     "pretty-bytes": "^6.0.0",
     "react": "^18.2.0",

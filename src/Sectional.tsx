@@ -11,11 +11,15 @@ interface SectionalProps {
 export default function Sectional({ sectional }: SectionalProps) {
   const label = Sectionals[sectional as keyof typeof Sectionals];
 
-  const [blob, setBlob] = useState<Blob | null | undefined>();
+  const [blobs, setBlobs] = useState<Blob[] | null | undefined>();
 
   useEffect(() => {
     (async function () {
-      setBlob(await localforage.getItem(`tiff-${label}`));
+      const b = await Promise.all([
+        localforage.getItem<Blob>(`tiff-${label}-s`),
+        localforage.getItem<Blob>(`tiff-${label}-m`),
+      ]);
+      setBlobs((b.filter((i) => i).length ? b : null) as Blob[]);
     })();
   }, [label]);
 
@@ -23,7 +27,7 @@ export default function Sectional({ sectional }: SectionalProps) {
     <Link to={`/${sectional}`}>
       {label} ({sectional}){" "}
       {(() => {
-        switch (blob) {
+        switch (blobs) {
           case undefined:
             return "";
           case null:
@@ -31,7 +35,7 @@ export default function Sectional({ sectional }: SectionalProps) {
           default:
             return (
               <>
-                ✅ <SectionalSize blob={blob} />
+                ✅ <SectionalSize blobs={blobs} />
               </>
             );
         }
